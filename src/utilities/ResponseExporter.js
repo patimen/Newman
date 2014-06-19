@@ -6,6 +6,21 @@ var jsface       = require('jsface'),
 	fs           = require('fs');
 
 /**
+ * Generates a GUID string.
+ * @returns {String} The generated GUID.
+ * @example af8a8416-6e18-a307-bd9c-f2c947bbb3aa
+ * @author Slavik Meltser (slavik@meltser.info).
+ * @link http://slavik.meltser.info/?p=142
+ */
+function guid() {
+    function _p8(s) {
+        var p = (Math.random().toString(16)+"000000000").substr(2,8);
+        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
+    }
+    return _p8() + _p8(true) + _p8(true) + _p8();
+}
+
+/**
  * @class ResponseExporter
  * @classdesc Class Used for exporting the generated responses.
  */
@@ -13,7 +28,6 @@ var ResponseExporter = jsface.Class({
 	$singleton: true,
 
 	_results: [],
-
 	/**
 	 * Adds the Reponse to the Result Array.
 	 * @param {Object} request Request we got from Newman.
@@ -36,17 +50,46 @@ var ResponseExporter = jsface.Class({
 		if (!tests) {
 			tests = {};
 		}
+        Globals.requestJSON.requests.forEach(function(part, index, theArray) {
+            if (part.id === request.id)
+            {
+                theArray[index].responses.push(
+                    {
+                        "responseCode": {
+                            "code": response.statusCode,
+                            "name": "",       // TODO: Fill these guys later on
+                            "detail": ""
+                        },
+                        "time" : response.stats.timeTaken,
+                        "headers" : response.headers,
+                        "text" : response.body,
+                        "language" : "javascript",
+                        "id" : guid(),
+                        "name" : request.name,
+                        "request" : {
+                            "url" : request.transformed.url,
+                            "data" : request.transformed.data,
+                            "headers" : request.transformed.headers,
+                            "method" : request.method,
+                            "dataMode" : request.dataMode
+                        }
+                    }
+                );
+            }
+        });
 
 		return {
 			"id": request.id,
 			"name": request.name,
-			"url": request.url,
+			"url": request.transformed.url,
 			"totalTime": response.stats.timeTaken,
 			"responseCode": {
 				"code": response.statusCode,
 				"name": "",       // TODO: Fill these guys later on
 				"detail": ""
 			},
+            "responseBody" : response.body,
+            "responseHeaders" : response.headers,
 			"tests": tests,
 			"testPassFailCounts": this._extractPassFailCountFromTests(tests),
 			"times": [],			// Not sure what to do with this guy
@@ -79,7 +122,7 @@ var ResponseExporter = jsface.Class({
 		}, {});
 	},
 
-	/**
+    /**
 	 * This function when called creates a file with the JSON of the results.
 	 * @memberOf ResponseExporter
 	 */
@@ -90,6 +133,11 @@ var ResponseExporter = jsface.Class({
 			fs.writeFileSync(filepath , JSON.stringify(exportVariable, null, 4));
 			log.note("\n\n Output Log: " + filepath + "\n");
 		}
+        if (Globals.collectionFile) {
+            console.log(Globals.collectionFile);
+            var filepath = path.resolve(Globals.collectionFile);
+            fs.writeFileSync(filepath, JSON.stringify(Globals.requestJSON, null, 4));
+        }
 	},
 
 	_createExportVariable: function() {

@@ -1,2 +1,13 @@
 node_modules/
 docs/*
+.idea/*
+
+Collection.json
+
+CorrectCollection.json
+
+FP2.postman_environment
+
+HappyPath.json.postman_collection
+
+HappyPathRun.json

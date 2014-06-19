@@ -21,6 +21,7 @@ var Globals = jsface.Class({
 		this.globalJSON = options.globalJSON || [];
 		this.stopOnError = options.stopOnError;
 		this.noColor = options.noColor;
+        this.collectionFile = options.collectionFile;
 	}
 });
 
