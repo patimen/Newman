@@ -135,6 +135,7 @@ var ResponseExporter = jsface.Class({
 		}
         if (Globals.collectionFile) {
             console.log(Globals.collectionFile);
+            Globals.requestJSON.id = guid();
             var filepath = path.resolve(Globals.collectionFile);
             fs.writeFileSync(filepath, JSON.stringify(Globals.requestJSON, null, 4));
         }
