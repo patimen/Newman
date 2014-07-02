@@ -5,7 +5,9 @@ var jsface           = require("jsface"),
 	Globals          = require('../utilities/Globals'),
 	EventEmitter     = require('../utilities/EventEmitter'),
 	CollectionModel  = require('../models/CollectionModel'),
+    FolderModel      = require('../models/FolderModel'),
 	CollectionRunner = require("../runners/CollectionRunner"),
+    Errors           = require('../utilities/ErrorHandler'),
 	fs               = require('fs'),
 	path             = require('path'),
 	JSON5            = require('json5'),
@@ -23,6 +25,15 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 		this.setOptions(options);
 		this.collection = this._getOrderedCollection(requestJSON);
 
+        //check if only a folder has to be run
+        if(options.folderName) {
+            this.folder = this._getFolderFromCollection(requestJSON, options.folderName);
+            if(!this.folder) {
+                Errors.terminateWithError('The folder ['+options.folderName+'] does not exist.');
+            }
+            this.collection = this._getFolderRequestsFromCollection(this.collection, this.folder);
+        }
+
 		// collection of environment jsons passed from datafile
 		this.envJsons = this._getJsonArraysFromFile();
 
@@ -39,11 +50,67 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 		return orderedCollection;
 	},
 
+    _getFolderFromCollection: function(requestJSON, folderName) {
+        var folders = requestJSON.folders;
+        var folderNeeded = _und.find(folders, function(folder) {return folder.name===folderName;});
+        if(!folderNeeded) {
+            return null;
+        }
+        var folderModel = new FolderModel(folderNeeded);
+        return folderModel;
+    },
+
+    _getFolderRequestsFromCollection: function(collection, folder) {
+        if(!folder || !folder.order) {
+            return [];
+        }
+        var retVal = [];
+        var folderOrders = folder.order;
+        _und.each(collection,function(request) {
+            if(folderOrders.indexOf(request.id)!==-1) {
+                retVal.push(request);
+            }
+        });
+        return retVal;
+    },
+
+    _kvArrayToObject: function(array) {
+        var obj = {};
+        _und.each(array,function(kv) {
+            obj[kv.key]=kv.value;
+        });
+        return obj;
+    },
+
+    _objectToKvArray: function(obj) {
+        var arr=[];
+        for (var property in obj) {
+            if (obj.hasOwnProperty(property)) {
+                arr.push({"key":property, "value":obj[property]});
+            }
+        }
+        return arr;
+    },
+
 	// sets the global environment object property as the current data json
 	_setGlobalEnvJson: function() {
 		if (this.envJsons.length) {
 			var envJson = { values: this.envJsons[this.iteration - 1] };
-			Globals.envJson = envJson;
+            if(!Globals.envJson && !Globals.envJson.values) {
+                Globals.envJson = envJson;
+            }
+            else {
+                var existingEnvVars = this._kvArrayToObject(Globals.envJson.values);
+                var dataFileVars = this._kvArrayToObject(envJson.values);
+                var finalObject = existingEnvVars;
+                for (var property in dataFileVars) {
+                    if (dataFileVars.hasOwnProperty(property)) {
+                        finalObject[property]=dataFileVars[property];
+                    }
+                }
+                var finalArray = this._objectToKvArray(finalObject);
+                Globals.envJson.values = finalArray;
+            }
 		}
 	},
 
@@ -94,8 +161,10 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 	_runNextIteration: function() {
 		if (this.iteration < this.numOfIterations) {
 			Globals.iterationNumber = ++this.iteration;
+            var currentGlobalEnv = Globals.envJson;
 			this._setGlobalEnvJson();
 			this._runCollection();
+            Globals.envJson = currentGlobalEnv;
 		} else {
 			this._exportResponses();
 			this.emit('iterationRunnerOver');
