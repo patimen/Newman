@@ -128,7 +128,7 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 				var headers;
 				var strContents = fs.readFileSync(dataFile, 'utf-8');
 
-				_und.each(strContents.split('\r'), function(row, i) {
+				_und.each(strContents.split('\n'), function(row, i) {
 					if (row.length) { // since node reads a blank line as well
 						if (i === 0) {
 							headers = _und.map(row.split(','), function(key) {

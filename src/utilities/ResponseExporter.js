@@ -65,7 +65,7 @@ var ResponseExporter = jsface.Class({
                         "text" : response.body,
                         "language" : "javascript",
                         "id" : guid(),
-                        "name" : request.name,
+                        "name" : request.name + " " + Globals.iterationNumber,
                         "request" : {
                             "url" : request.transformed.url,
                             "data" : request.transformed.data,
