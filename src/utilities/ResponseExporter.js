@@ -3,6 +3,7 @@ var jsface       = require('jsface'),
 	log          = require('./Logger'),
 	_und         = require('underscore'),
 	path         = require('path'),
+    builder      = require('xmlbuilder'),
 	fs           = require('fs');
 
 /**
@@ -77,7 +78,34 @@ var ResponseExporter = jsface.Class({
                 );
             }
         });
+        if (!Globals.currentIteration.results.hasOwnProperty(request.folderName))
+        {
+            Globals.currentIteration.results[request.folderName] = [];
+        }
 
+        Globals.currentIteration.results[request.folderName].push(
+            {
+                "request" : {
+                    "url" : request.transformed.url,
+                    "data" : request.transformed.data,
+                    "headers" : request.transformed.headers,
+                    "method" : request.method,
+                    "dataMode" : request.dataMode
+                },
+                "name": request.name,
+                "url": request.transformed.url,
+                "responseCode": {
+                    "code": response.statusCode,
+                    "name": "",       // TODO: Fill these guys later on
+                    "detail": ""
+                },
+                "responseBody" : response.body,
+                "responseHeaders" : response.headers,
+                "tests": tests,
+                "testPassFailCounts": this._extractPassFailCountFromTests(tests),
+                "time": response.stats.timeTaken
+            }
+        );
 		return {
 			"id": request.id,
 			"name": request.name,
@@ -128,9 +156,8 @@ var ResponseExporter = jsface.Class({
 	 */
 	exportResults: function() {
 		if (Globals.outputFile) {
-			var exportVariable = this._createExportVariable();
 			var filepath = path.resolve(Globals.outputFile);
-			fs.writeFileSync(filepath , JSON.stringify(exportVariable, null, 4));
+			fs.writeFileSync(filepath , JSON.stringify(Globals.iterations, null, 4));
 			log.note("\n\n Output Log: " + filepath + "\n");
 		}
         if (Globals.collectionFile) {
@@ -139,8 +166,43 @@ var ResponseExporter = jsface.Class({
             var filepath = path.resolve(Globals.collectionFile);
             fs.writeFileSync(filepath, JSON.stringify(Globals.requestJSON, null, 4));
         }
+        fs.writeFileSync("junit.xml", this._createJunitXml(Globals.iterations))
 	},
 
+    _createJunitXml: function(iterations) {
+        // creates a Document object with root "<report>"
+        var doc = builder.create("testsuite");
+
+
+        Globals.iterations.forEach(function(iteration) {
+            for (var folder in iteration.results) {
+
+                var testCase = doc.ele("testcase");
+                testCase.att("classname",folder);
+                var baseName = folder == "root" ? iteration.collectionName : folder;
+                for (var variable in iteration.dataFileVars) {
+                    baseName += "[" + variable + ":" + iteration.dataFileVars[variable] + "]";
+                }
+                testCase.att("name", baseName);
+                var results = iteration.results[folder];
+                testCase.att("time",results.reduce(function(x,y) { return x.time + y.time}, 0));
+                var failingResults = results.filter(function(result) {
+                    return Object.keys(result.tests).some(function(test) { return !result.tests[test]})
+                });
+                if (failingResults.length > 0) {
+                    var failureElement = testCase.ele("failure");
+                    failureElement.att("message", failingResults.map(function(result) {
+                        return Object.keys(result.tests).filter(function(test) { return !result.tests[test]}).join()
+                    }).join());
+                    failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result)}).join("\n"));
+                }
+
+                var systemOut = testCase.ele("system-out");
+                systemOut.txt(results.map(function(result) {return JSON.stringify(result)}).join("\n"));
+            }
+        });
+        return doc;
+    },
 	_createExportVariable: function() {
 		return {
 			id: '',

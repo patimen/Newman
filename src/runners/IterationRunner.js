@@ -33,7 +33,15 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
             }
             this.collection = this._getFolderRequestsFromCollection(this.collection, this.folder);
         }
-
+        _und.forEach(this.collection, function(request) {
+            var containingFolder = _und.find(requestJSON.folders, function(folder) {return _und.find(folder.order, function(order) { return order === request.id})});
+            if (containingFolder) {
+                request.folderName = containingFolder.name;
+            }
+            else {
+                request.folderName = "root";
+            }
+        }, this);
 		// collection of environment jsons passed from datafile
 		this.envJsons = this._getJsonArraysFromFile();
 
@@ -102,6 +110,7 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
             else {
                 var existingEnvVars = this._kvArrayToObject(Globals.envJson.values);
                 var dataFileVars = this._kvArrayToObject(envJson.values);
+                Globals.currentIteration.dataFileVars = dataFileVars;
                 var finalObject = existingEnvVars;
                 for (var property in dataFileVars) {
                     if (dataFileVars.hasOwnProperty(property)) {
@@ -161,10 +170,12 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 	_runNextIteration: function() {
 		if (this.iteration < this.numOfIterations) {
 			Globals.iterationNumber = ++this.iteration;
+            Globals.currentIteration = { iterationNumber: Globals.iterationNumber, results : {}, collectionName : this.collection.name };
             var currentGlobalEnv = Globals.envJson;
 			this._setGlobalEnvJson();
 			this._runCollection();
             Globals.envJson = currentGlobalEnv;
+            Globals.iterations.push(Globals.currentIteration);
 		} else {
 			this._exportResponses();
 			this.emit('iterationRunnerOver');

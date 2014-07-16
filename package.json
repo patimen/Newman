@@ -39,7 +39,8 @@
     "lodash": "*",
     "xml2js": "*",
     "sugar" : "1.3.9",
-    "tv4": "*"
+    "tv4": "*",
+    "xmlbuilder" : "*"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
