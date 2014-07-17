@@ -194,11 +194,11 @@ var ResponseExporter = jsface.Class({
                     failureElement.att("message", failingResults.map(function(result) {
                         return Object.keys(result.tests).filter(function(test) { return !result.tests[test]}).join()
                     }).join());
-                    failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result)}).join("\n"));
+                    failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
                 }
 
                 var systemOut = testCase.ele("system-out");
-                systemOut.txt(results.map(function(result) {return JSON.stringify(result)}).join("\n"));
+                systemOut.txt(results.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
             }
         });
         return doc;
