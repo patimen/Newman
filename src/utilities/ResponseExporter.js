@@ -178,8 +178,8 @@ var ResponseExporter = jsface.Class({
             for (var folder in iteration.results) {
 
                 var testCase = doc.ele("testcase");
-                testCase.att("classname",folder);
-                var baseName = folder == "root" ? iteration.collectionName : folder;
+                testCase.att("classname",iteration.collectionName);
+                var baseName = (folder === "root") ? iteration.collectionName : folder;
                 for (var variable in iteration.dataFileVars) {
                     baseName += "[" + variable + ":" + iteration.dataFileVars[variable] + "]";
                 }
