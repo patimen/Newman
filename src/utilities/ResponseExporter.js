@@ -51,6 +51,12 @@ var ResponseExporter = jsface.Class({
 		if (!tests) {
 			tests = {};
 		}
+        var failed = Object.keys(tests).some(function(test) { return !tests[test]});
+        var baseName = failed ? "FAIL:" : "" + request.name;
+        for (var variable in Globals.currentIteration.dataFileVars) {
+            baseName += "[" + variable + ":" + Globals.currentIteration.dataFileVars[variable] + "]";
+        }
+
         Globals.requestJSON.requests.forEach(function(part, index, theArray) {
             if (part.id === request.id)
             {
@@ -66,7 +72,7 @@ var ResponseExporter = jsface.Class({
                         "text" : response.body,
                         "language" : "javascript",
                         "id" : guid(),
-                        "name" : request.name + " " + Globals.iterationNumber,
+                        "name" : baseName,
                         "request" : {
                             "url" : request.transformed.url,
                             "data" : request.transformed.data,
