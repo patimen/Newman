@@ -52,7 +52,7 @@ var ResponseExporter = jsface.Class({
 			tests = {};
 		}
         var failed = Object.keys(tests).some(function(test) { return !tests[test]});
-        var baseName = failed ? "FAIL:" : "" + request.name;
+        var baseName = failed ? "FAIL:" : "PASS:";
         for (var variable in Globals.currentIteration.dataFileVars) {
             baseName += "[" + variable + ":" + Globals.currentIteration.dataFileVars[variable] + "]";
         }
