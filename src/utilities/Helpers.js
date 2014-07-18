@@ -1,6 +1,7 @@
 var jsface = require('jsface'),
 	fs     = require('fs'),
 	Errors = require('./ErrorHandler'),
+    Globals = require('../utilities/Globals'),
 	_und   = require('underscore');
 
 /** 
