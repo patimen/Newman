@@ -42,6 +42,12 @@ var Helpers = jsface.Class({
         }
     },
 
+    validateGlobalFile: function(file) {
+        if (!fs.existsSync(file)) {
+            Errors.terminateWithError("Please specify a valid Postman globals file");
+        }
+    },
+
 	// transforms an array of 
 	// [{"id": 1, "name":"foo"}, { .. }, ..] 
 	// into an object {"key": "id", "value": "foo"}]
@@ -69,13 +75,39 @@ var Helpers = jsface.Class({
 			}
 		});
 		return headerObj;
-	}
-});
+	},
 
-// symbols for logging
-exports.symbols =  {
-	err: (process.platform === "win32") ? "\u00D7 " : "✗ ",
-	ok:  (process.platform === "win32") ? "\u221A " : "✔ "
-};
+    kvArrayToObject: function(array) {
+        var obj = {};
+        _und.each(array,function(kv) {
+            obj[kv.key]=kv.value;
+        });
+        return obj;
+    },
+
+    objectToKvArray: function(obj) {
+        var arr=[];
+        for (var property in obj) {
+            if (obj.hasOwnProperty(property)) {
+                arr.push({"key":property, "value":obj[property]});
+            }
+        }
+        return arr;
+    },
+
+    augmentDataArrays: function(oldArray, newArray) {
+        var existingEnvVars = this.kvArrayToObject(oldArray);
+        var dataFileVars = this.kvArrayToObject(newArray);
+        var finalObject = existingEnvVars;
+        for (var property in dataFileVars) {
+            if (dataFileVars.hasOwnProperty(property)) {
+                finalObject[property]=dataFileVars[property];
+            }
+        }
+        var finalArray = this.objectToKvArray(finalObject);
+        //Globals.envJson.values = finalArray;
+        return finalArray;
+    }
+});
 
 module.exports = Helpers;
