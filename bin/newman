@@ -105,6 +105,10 @@ function main() {
         newmanOptions.collectionFile = program.collectionFile;
     }
 
+    if (program.data) {
+        newmanOptions.dataFile = program.data;
+    }
+
     if (program.global) {
         newmanOptions.globalJSON = program.global;
     }

@@ -98,6 +98,7 @@ var Helpers = jsface.Class({
     augmentDataArrays: function(oldArray, newArray) {
         var existingEnvVars = this.kvArrayToObject(oldArray);
         var dataFileVars = this.kvArrayToObject(newArray);
+        Globals.currentIteration.dataFileVars = dataFileVars;
         var finalObject = existingEnvVars;
         for (var property in dataFileVars) {
             if (dataFileVars.hasOwnProperty(property)) {
