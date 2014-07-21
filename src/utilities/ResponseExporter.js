@@ -191,7 +191,7 @@ var ResponseExporter = jsface.Class({
                 }
                 testCase.att("name", baseName);
                 var results = iteration.results[folder];
-                testCase.att("time", results.reduce(function (x, y) { return x + y.time }, 0));
+                testCase.att("time", results.reduce(function (x, y) { return x + y.time }, 0) / 1000 );
                 var failingResults = results.filter(function(result) {
                     return Object.keys(result.tests).some(function(test) { return !result.tests[test]})
                 });
