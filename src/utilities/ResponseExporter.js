@@ -60,7 +60,7 @@ var ResponseExporter = jsface.Class({
         Globals.requestJSON.requests.forEach(function(part, index, theArray) {
             if (part.id === request.id)
             {
-                if (failed) {
+                if (failed && !theArray[index].name.startsWith("FAIL:")) {
                     theArray[index].name = "FAIL:" + theArray[index].name;
                 }
                 theArray[index].responses.push(
