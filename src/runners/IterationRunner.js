@@ -179,12 +179,16 @@ var IterationRunner = jsface.Class([Options, EventEmitter], {
 	// set the global envjson and then run the next iteration
 	_runNextIteration: function() {
 		if (this.iteration < this.numOfIterations) {
+            if (typeof Globals.iterationGlobals !== "undefined")
+            {
+                Globals.envJson = Globals.iterationGlobals;
+            }
+            Globals.lastFolder = null;
 			Globals.iterationNumber = ++this.iteration;
             Globals.currentIteration = { iterationNumber: Globals.iterationNumber, results : {}, collectionName : this.collectionName };
-            var currentGlobalEnv = Globals.envJson;
+            Globals.iterationGlobals = JSON.parse(JSON.stringify(Globals.envJson));;
 			this._setGlobalEnvJson();
 			this._runCollection();
-            Globals.envJson = currentGlobalEnv;
             Globals.iterations.push(Globals.currentIteration);
 		} else {
 			this._exportResponses();
