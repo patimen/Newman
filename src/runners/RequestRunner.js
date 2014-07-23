@@ -66,6 +66,16 @@ var RequestRunner = jsface.Class([Queue, EventEmitter], {
 	_execute: function() {
 		var request = this.getFromQueue();
 		if (request) {
+            if (typeof Globals.lastFolder==="undefined") {
+                Globals.lastFolder = request.folderName;
+                Globals.oldGlobals = Globals.envJson;
+            }
+
+            if (Globals.lastFolder != request.folderName) {
+                Globals.envJson = Globals.oldGlobals;
+                Globals.lastFolder = request.folderName;
+            }
+
             //To be uncommented if each prScript/test should set transient env. vars
             //var oldGlobals = Globals.envJson;
 
