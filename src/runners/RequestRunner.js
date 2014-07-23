@@ -66,9 +66,9 @@ var RequestRunner = jsface.Class([Queue, EventEmitter], {
 	_execute: function() {
 		var request = this.getFromQueue();
 		if (request) {
-            if (typeof Globals.lastFolder==="undefined") {
+            if (Globals.lastFolder===null) {
                 Globals.lastFolder = request.folderName;
-                Globals.oldGlobals = Globals.envJson;
+                Globals.oldGlobals = JSON.parse(JSON.stringify(Globals.envJson));
             }
 
             if (Globals.lastFolder != request.folderName) {
