@@ -63,6 +63,7 @@ var ResponseExporter = jsface.Class({
                 if (failed && !theArray[index].name.startsWith("FAIL:")) {
                     theArray[index].name = "FAIL:" + theArray[index].name;
                 }
+
                 theArray[index].responses.push(
                     {
                         "responseCode": {
@@ -71,7 +72,14 @@ var ResponseExporter = jsface.Class({
                             "detail": ""
                         },
                         "time" : response.stats.timeTaken,
-                        "headers" : response.headers,
+                        "headers" : Object.keys(response.headers).map(function(header) {
+                            return {
+                                "name" : header,
+                                "key" : header,
+                                "value" : response.headers[header],
+                                "description" : ""
+                            }
+                        }),
                         "text" : response.body,
                         "language" : "javascript",
                         "id" : guid(),
