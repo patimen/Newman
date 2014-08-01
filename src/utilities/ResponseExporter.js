@@ -187,7 +187,11 @@ var ResponseExporter = jsface.Class({
         fs.writeFileSync("junit.xml", this._createJunitXml(Globals.iterations))
 	},
 
-    _createJunitXml: function(iterations) {
+    getFailedTests: function (result) {
+        return Object.keys(result.tests).filter(function (test) {
+            return !result.tests[test]
+        }).join();
+    }, _createJunitXml: function(iterations) {
         // creates a Document object with root "<report>"
         var doc = builder.create("testsuite");
 
@@ -209,9 +213,12 @@ var ResponseExporter = jsface.Class({
                 });
                 if (failingResults.length > 0) {
                     var failureElement = testCase.ele("failure");
-                    failureElement.att("message", failingResults.map(function(result) {
-                        return Object.keys(result.tests).filter(function(test) { return !result.tests[test]}).join()
-                    }).join());
+
+                    var firstFailure = failingResults[0];
+                    var errorMessage = this.getFailedTests(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
+                        return this.getFailedTests(result)
+                    }).join();
+                    failureElement.att("message", errorMessage);
                     failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
                 }
 
