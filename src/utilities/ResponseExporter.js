@@ -187,14 +187,16 @@ var ResponseExporter = jsface.Class({
         fs.writeFileSync("junit.xml", this._createJunitXml(Globals.iterations))
 	},
 
-    getFailedTests: function (result) {
-        return Object.keys(result.tests).filter(function (test) {
-            return !result.tests[test]
-        }).join();
-    }, _createJunitXml: function(iterations) {
+    _createJunitXml: function(iterations) {
         // creates a Document object with root "<report>"
         var doc = builder.create("testsuite");
 
+
+        function getFailureMessages(result) {
+            return Object.keys(result.tests).filter(function (test) {
+                return !result.tests[test]
+            }).join();
+        }
 
         Globals.iterations.forEach(function(iteration) {
             for (var folder in iteration.results) {
@@ -215,8 +217,8 @@ var ResponseExporter = jsface.Class({
                     var failureElement = testCase.ele("failure");
 
                     var firstFailure = failingResults[0];
-                    var errorMessage = this.getFailedTests(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
-                        return this.getFailedTests(result)
+                    var errorMessage = getFailureMessages(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
+                        return getFailureMessages(result)
                     }).join();
                     failureElement.att("message", errorMessage);
                     failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
