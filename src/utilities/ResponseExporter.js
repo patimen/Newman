@@ -120,7 +120,8 @@ var ResponseExporter = jsface.Class({
                 "responseHeaders" : response.headers,
                 "tests": tests,
                 "testPassFailCounts": this._extractPassFailCountFromTests(tests),
-                "time": response.stats.timeTaken
+                "time": response.stats.timeTaken,
+                "timestamp": request.startTime / 1000
             }
         );
 		return {
