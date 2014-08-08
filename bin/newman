@@ -30,6 +30,7 @@ function parseArguments() {
 	  .option('-s, --stopOnError', "Stops the runner when a test case fails", null)
 	  .option('-n, --number [number]', 'Define the number of iterations to run.', null)
 	  .option('-C, --noColor', 'Disable colored output.', null)
+      .option('-x, --junitXml [file]', 'Path to file where junit xml should be written.', null)
       .option('-j, --collectionFile [file]', 'This file will contain a copy of the colleciton, with the responses from the tests added. [file]', null)
 	  .option('-o, --outputFile [file]', 'Path to file where output should be written. [file]', null);
 
@@ -100,6 +101,10 @@ function main() {
 	if (program.outputFile) {
 		newmanOptions.outputFile = program.outputFile;
 	}
+
+    if (program.junitXml) {
+        newmanOptions.junitXml = program.junitXml;
+    }
 
     if (program.collectionFile) {
         newmanOptions.collectionFile = program.collectionFile;

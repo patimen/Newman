@@ -184,7 +184,10 @@ var ResponseExporter = jsface.Class({
             var filepath = path.resolve(Globals.collectionFile);
             fs.writeFileSync(filepath, JSON.stringify(Globals.requestJSON, null, 4));
         }
-        fs.writeFileSync("junit.xml", this._createJunitXml(Globals.iterations))
+        if (Globals.junitXml) {
+            var filepath = path.resolve(Globals.junitXml);
+            fs.writeFileSync(filepath, this._createJunitXml(Globals.iterations))
+        }
 	},
 
     _createJunitXml: function(iterations) {
