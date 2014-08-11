@@ -220,9 +220,16 @@ var ResponseExporter = jsface.Class({
                     var failureElement = testCase.ele("failure");
 
                     var firstFailure = failingResults[0];
-                    var errorMessage = getFailureMessages(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
-                        return getFailureMessages(result)
-                    }).join();
+                    var errorMessage = "";
+                    if (firstFailure.responseCode.code >= 200 && firstFailure.responseCode.code < 300) {
+                        errorMessage = getFailureMessages(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
+                            return getFailureMessages(result)
+                        }).join();
+                    } else {
+                        errorMessage = firstFailure.responseCode.code + ":" + firstFailure.responseBody + ":" + getFailureMessages(firstFailure) + "--" + failingResults.map(function (result) {
+                            return getFailureMessages(result)
+                        }).join();
+                    }
                     failureElement.att("message", errorMessage);
                     failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
                 }
