@@ -99,6 +99,7 @@ var TestResponseHandler = jsface.Class(AbstractResponseHandler, {
             }
             else {
                 ErrorHandler.exceptionError(err);
+                sandbox.tests[err] = false;
             }
 		}
 		return sandbox.tests;
