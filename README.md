@@ -46,9 +46,11 @@ Options:
 -e, --environment [file]  Specify a Postman environment as a JSON [file]
 -d, --data [file]         Specify a data file to use either json or csv
 -g, --global [file]       Specify a Postman globals file as JSON [file]
+-y, --delay [number]      Specify a delay (in ms) between requests [number]
 -s, --stopOnError         Stops the runner when a test case fails
 -n, --number [number]     Define the number of iterations to run.
 -o, --outputFile [file]   Path to file where output should be written. [file]
+-x, --exitCode             Continue running tests even after a failure, but exit with code=1
 -C, --noColor             Disable colored output.
 ```
 
@@ -124,6 +126,7 @@ newmanOptions = {
 	iterationCount: 10,                    // define the number of times the runner should run
 	outputFile: "outfile.json",            // the file to export to
 	responseHandler: "TestResponseHandler", // the response handler to use
+	asLibrary: true,         				// this makes sure the exit code is returned as an argument to the callback function
 	stopOnError: true
 }
 

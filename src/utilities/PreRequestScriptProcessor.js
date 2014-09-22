@@ -9,6 +9,8 @@ var jsface                  = require('jsface'),
     Backbone                = require("backbone"),
     xmlToJson               = require("xml2js"),
     Globals                 = require("./Globals"),
+    btoa                    = require("btoa"),
+    atob                    = require("atob"),
     tv4                     = require("tv4");
 
 
@@ -67,6 +69,16 @@ var PreRequestScriptProcessor = jsface.Class({
         return Helpers.transformFromKeyValue(Globals.envJson.values);
     },
 
+    // sets the global vars json as a key value pair
+    _setGlobalContext: function() {
+        return Helpers.transformFromKeyValue(Globals.globalJson.values);
+    },
+
+    // sets the data vars json as a key value pair
+    _setDataContext: function() {
+        return Helpers.transformFromKeyValue(Globals.dataJson.values);
+    },
+
     _getTransformedRequestData: function(request) {
         var transformedData;
 
@@ -97,12 +109,14 @@ var PreRequestScriptProcessor = jsface.Class({
                 data: this._getTransformedRequestData(request),
                 dataMode: request.dataMode
             },
-            data: {},
             iteration: Globals.iterationNumber,
             environment: this._setEnvironmentContext(),
-            globals: {},
+            globals: this._setGlobalContext(),
+            data: this._setDataContext(),
             $: _jq,
             _: _lod,
+            btoa: btoa,
+            atob: atob,
             Backbone: Backbone,
             xmlToJson: function(string) {
                 var JSON = {};
@@ -112,7 +126,7 @@ var PreRequestScriptProcessor = jsface.Class({
                 return JSON;
             },
             tv4: tv4,
-            console: {log: function(){}},
+            console: {log: function(msg){console.log(msg);}},
             postman: {
                 setEnvironmentVariable: function(key, value) {
                     var envVar = _und.find(Globals.envJson.values, function(envObject){
@@ -140,7 +154,29 @@ var PreRequestScriptProcessor = jsface.Class({
                     return null;
                 },
                 setGlobalVariable: function(key, value) {
-                    // Set this guy up when we setup globals.
+                    var envVar = _und.find(Globals.globalJson.values, function(envObject){
+                        return envObject["key"] === key;
+                    });
+
+                    if (envVar) { // if the envVariable exists replace it
+                        envVar["value"] = value;
+                    } else { // else add a new envVariable
+                        Globals.globalJson.values.push({
+                            key: key,
+                            value: value,
+                            type: "text",
+                            name: key
+                        });
+                    }
+                },
+                getGlobalVariable: function(key) {
+                    var envVar = _und.find(Globals.globalJson.values, function(envObject){
+                        return envObject["key"] === key;
+                    });
+                    if(envVar) {
+                        return envVar["value"];
+                    }
+                    return null;
                 }
             }
         };

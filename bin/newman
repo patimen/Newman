@@ -19,17 +19,19 @@ var color   = require('cli-color'),
 
 function parseArguments() {
 	program
-	  .version('1.0.6')
-	  .usage('[options] file')
+	  .version('1.1.4')
+	  .usage('[options]')
 	  .option('-c, --collection [file]', 'Specify a Postman collection as a JSON [file]', null)
-      .option('-u, --url [url]', 'Specify a Postman collection as a [url]', null)
-      .option('-f, --folder [folder-name]', 'Run a single folder from a collection. To be used with -c or -u', null)
+	  .option('-u, --url [url]', 'Specify a Postman collection as a [url]', null)
+	  .option('-f, --folder [folder-name]', 'Run a single folder from a collection. To be used with -c or -u', null)
 	  .option('-e, --environment [file]', 'Specify a Postman environment as a JSON [file]', null)
-      .option('-d, --data [file]', 'Specify a data file to use either json or csv', null)
-      .option('-g, --global [file]', 'Specify a Postman globals file [file]', null)
-	  .option('-s, --stopOnError', "Stops the runner when a test case fails", null)
+	  .option('-d, --data [file]', 'Specify a data file to use either json or csv', null)
+	  .option('-g, --global [file]', 'Specify a Postman globals file [file]', null)
+	  .option('-y, --delay [number]', "Specify a delay (in ms) between requests", null)
+	  .option('-s, --stopOnError', "Stops the runner with code=1 when a test case fails", null)
 	  .option('-n, --number [number]', 'Define the number of iterations to run.', null)
 	  .option('-C, --noColor', 'Disable colored output.', null)
+	  .option('-x, --exitCode', 'Continue running tests even after a failure, but exit with code=1. Incompatible with --stopOnError', null)
       .option('-x, --junitXml [file]', 'Path to file where junit xml should be written.', null)
       .option('-j, --collectionFile [file]', 'This file will contain a copy of the colleciton, with the responses from the tests added. [file]', null)
 	  .option('-o, --outputFile [file]', 'Path to file where output should be written. [file]', null);
@@ -41,7 +43,7 @@ function parseArguments() {
 	  console.log('');
 	  console.log('    newman -c POSTMAN_COLLECTION');
 	  console.log('    newman -u POSTMAN_COLLECTION -e POSTMAN_ENVIRONMENT');
-      console.log('    newman -c POSTMAN_COLLECTION -f SAMPLE_FOLDER');
+	  console.log('    newman -c POSTMAN_COLLECTION -f SAMPLE_FOLDER');
 	  console.log('');
 	  console.log('  For more documentation, issues and examples head over to https://github.com/a85/Newman');
 	  console.log('');
@@ -114,8 +116,20 @@ function main() {
         newmanOptions.dataFile = program.data;
     }
 
+    if (program.delay) {
+        if(isNaN(program.delay) || parseFloat(program.delay)%1 !== 0) {
+            Errors.terminateWithError("The delay must be an integer");
+        }
+        newmanOptions.delay = parseInt(program.delay);
+    }
+
     if (program.global) {
-        newmanOptions.globalJSON = program.global;
+        try {
+            newmanOptions.globalJSON = JSON5.parse(fs.readFileSync(program.global, 'utf8'));
+        }
+        catch (err) {
+            Errors.terminateWithError("The global file " + program.global+" could not be parsed.");
+        }
     }
 
     if(program.folder) {
@@ -124,6 +138,7 @@ function main() {
 
 	newmanOptions.stopOnError = !!program.stopOnError;
 	newmanOptions.noColor = !!program.noColor;
+	newmanOptions.asLibrary = false;
 
 	if (program.collection) {
         var collectionJson;
@@ -134,7 +149,11 @@ function main() {
         catch (err) {
             Errors.terminateWithError("The collection file " + program.collection+" could not be parsed.");
         }
-		Newman.execute(collectionJson, newmanOptions);
+		Newman.execute(collectionJson, newmanOptions, function(exitCode) {
+			if(program.exitCode) {
+				process.exit(exitCode);
+			}
+		});
 
 	} else {
 		// get collection from url
@@ -142,7 +161,11 @@ function main() {
 			if (data.error) {
 				Errors.terminateWithError('Unable to fetch a valid response. Error: ' + data.code);
 			}
-			Newman.execute(data.body, newmanOptions);
+			Newman.execute(data.body, newmanOptions, function(exitCode) {
+				if(program.exitCode) {
+					process.exit(exitCode);
+				}
+			});
 		});
 	}
 }

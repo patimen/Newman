@@ -18,9 +18,12 @@ var Globals = jsface.Class({
 		this.envJson = options.envJson || {};
 		this.iterationNumber = 1;
 		this.outputFile = options.outputFile || '';
-		this.globalJSON = options.globalJSON || [];
+		this.globalJson = options.globalJSON || [];
+        this.dataJson = [];
 		this.stopOnError = options.stopOnError;
 		this.noColor = options.noColor;
+		this.asLibrary = options.asLibrary;
+		this.exitCode=0;
         this.collectionFile = options.collectionFile;
         this.junitXml = options.junitXml;
 	}
