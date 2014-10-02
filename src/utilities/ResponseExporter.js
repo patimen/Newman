@@ -193,6 +193,7 @@ var ResponseExporter = jsface.Class({
     _createJunitXml: function(iterations) {
         // creates a Document object with root "<report>"
         var doc = builder.create("testsuite");
+        doc.att("name", Globals.iterations[0].collectionName);
 
 
         function getFailureMessages(result) {
@@ -201,41 +202,106 @@ var ResponseExporter = jsface.Class({
             }).join();
         }
 
+        function getFirstFailureErrorMessage(firstFailure) {
+            if (firstFailure.responseCode.code >= 200 && firstFailure.responseCode.code < 300) {
+                return getFailureMessages(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody;
+            } else {
+                return firstFailure.responseCode.code + ":" + firstFailure.responseBody + ":" + getFailureMessages(firstFailure);
+            }
+        }
+
+        function addTestsForFolders(iteration, folder) {
+            var testCase = doc.ele("testcase");
+            testCase.att("classname", iteration.collectionName);
+            testCase.att("name", getTestName((folder === "root") ? iteration.collectionName : folder, iteration));
+            var results = iteration.results[folder];
+            testCase.att("time", results.reduce(function (x, y) {
+                return x + y.time
+            }, 0) / 1000);
+            var failingResults = results.filter(failed);
+            if (failingResults.length > 0) {
+                var failureElement = testCase.ele("failure");
+                failureElement.att("message", getFirstFailureErrorMessage(failingResults[0]) + "--" + failingResults.map(function (result) {
+                    return getFailureMessages(result)
+                }).join());
+                failureElement.txt(failingResults.map(function (result) {
+                    return JSON.stringify(result, null, 2)
+                }).join("\n"));
+            }
+
+            var systemOut = testCase.ele("system-out");
+            systemOut.txt(results.map(function (result) {
+                return JSON.stringify(result, null, 2)
+            }).join(",\n"));
+        }
+
+        function failed(result) {
+            return Object.keys(result.tests).some(function (test) {
+                return !result.tests[test]
+            });
+        }
+
+        function addTestsForCalls(iteration, folder) {
+            var systemOutText = "";
+            iteration.results[folder].forEach( function(result) {
+                if (!result.hasOwnProperty("tests") || Object.keys(result.tests).length === 0) {
+                    systemOutText += JSON.stringify(result,null,2) + "\n";
+                }
+                var testCase = doc.ele("testcase");
+                testCase.att("classname", (folder === "root") ? iteration.collectionName : folder);
+                testCase.att("name", getTestName(result.name, iteration));
+                testCase.att("time", result.time);
+                systemOutText += JSON.stringify(result,null,2) + "\n";
+                if (failed(result)) {
+                    var failureElement = testCase.ele("failure");
+                    failureElement.att("message", getFirstFailureErrorMessage(result));
+                    failureElement.txt(JSON.stringify(result,null,2));
+                    testCase.ele("system-out").txt(systemOutText);
+                    systemOutText = "";
+                }
+                else {
+                    testCase.ele("system-out").txt(JSON.stringify(result,null,2));
+                }
+            });
+        }
+
+        function getTestName(baseName, iteration) {
+            for (var variable in iteration.dataFileVars) {
+                baseName += "[" + variable + ":" + iteration.dataFileVars[variable] + "]";
+            }
+            return baseName;
+        }
+
+        function addTestsForTests(iteration, folder) {
+            var systemOutText = "";
+            iteration.results[folder].forEach( function(result) {
+                if (Object.keys(result.tests).length === 0) {
+                    systemOutText += JSON.stringify(result,null,2) + "\n";
+                }
+                Object.keys(result.tests).forEach( function(test) {
+                    var testCase = doc.ele("testcase");
+                    testCase.att("classname", ((folder === "root") ? iteration.collectionName : folder) + "." + result.name);
+                    testCase.att("name", getTestName(test, iteration));
+                    testCase.att("time", result.time);
+                    if (!result.tests[test]) {
+                        var failureElement = testCase.ele("failure");
+                        failureElement.att("message", test + ":" + result.responseCode.code + ":" + result.responseBody);
+                        failureElement.txt(JSON.stringify(result, null, 2));
+                    }
+                    testCase.ele("system-out").txt(systemOutText + "\n" + JSON.stringify(result,null,2));
+                });
+                if (Object.keys(result.tests).length > 0 && failed(result)) { systemOutText = ""; }
+            }  )
+        }
+
         Globals.iterations.forEach(function(iteration) {
             for (var folder in iteration.results) {
-
-                var testCase = doc.ele("testcase");
-                testCase.att("classname",iteration.collectionName);
-                var baseName = (folder === "root") ? iteration.collectionName : folder;
-                for (var variable in iteration.dataFileVars) {
-                    baseName += "[" + variable + ":" + iteration.dataFileVars[variable] + "]";
+                switch (Globals.junitLevel) {
+                    case "call": addTestsForCalls(iteration, folder); break;
+                    case "test": addTestsForTests(iteration, folder); break;
+                    default:
+                    case "folder": addTestsForFolders(iteration, folder); break;
                 }
-                testCase.att("name", baseName);
-                var results = iteration.results[folder];
-                testCase.att("time", results.reduce(function (x, y) { return x + y.time }, 0) / 1000 );
-                var failingResults = results.filter(function(result) {
-                    return Object.keys(result.tests).some(function(test) { return !result.tests[test]})
-                });
-                if (failingResults.length > 0) {
-                    var failureElement = testCase.ele("failure");
-
-                    var firstFailure = failingResults[0];
-                    var errorMessage = "";
-                    if (firstFailure.responseCode.code >= 200 && firstFailure.responseCode.code < 300) {
-                        errorMessage = getFailureMessages(firstFailure) + ":" + firstFailure.responseCode.code + ":" + firstFailure.responseBody + "--" + failingResults.map(function (result) {
-                            return getFailureMessages(result)
-                        }).join();
-                    } else {
-                        errorMessage = firstFailure.responseCode.code + ":" + firstFailure.responseBody + ":" + getFailureMessages(firstFailure) + "--" + failingResults.map(function (result) {
-                            return getFailureMessages(result)
-                        }).join();
-                    }
-                    failureElement.att("message", errorMessage);
-                    failureElement.txt(failingResults.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
-                }
-
-                var systemOut = testCase.ele("system-out");
-                systemOut.txt(results.map(function(result) {return JSON.stringify(result, null, 2)}).join("\n"));
             }
         });
         return doc;

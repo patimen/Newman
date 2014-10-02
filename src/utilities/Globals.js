@@ -26,6 +26,7 @@ var Globals = jsface.Class({
 		this.exitCode=0;
         this.collectionFile = options.collectionFile;
         this.junitXml = options.junitXml;
+        this.junitLevel = options.junitLevel;
 	}
 });
 
