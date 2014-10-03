@@ -250,7 +250,7 @@ var ResponseExporter = jsface.Class({
                 var testCase = doc.ele("testcase");
                 testCase.att("classname", (folder === "root") ? iteration.collectionName : folder);
                 testCase.att("name", getTestName(result.name, iteration));
-                testCase.att("time", result.time);
+                testCase.att("time", result.time / 1000);
                 systemOutText += JSON.stringify(result,null,2) + "\n";
                 if (failed(result)) {
                     var failureElement = testCase.ele("failure");
@@ -280,9 +280,10 @@ var ResponseExporter = jsface.Class({
                 }
                 Object.keys(result.tests).forEach( function(test) {
                     var testCase = doc.ele("testcase");
-                    testCase.att("classname", ((folder === "root") ? iteration.collectionName : folder) + "." + result.name);
-                    testCase.att("name", getTestName(test, iteration));
-                    testCase.att("time", result.time);
+                    var className = ((folder === "root") ? iteration.collectionName : folder) + "." + result.name;
+                    testCase.att("classname", getTestName(className,iteration));
+                    testCase.att("name", test);
+                    testCase.att("time", result.time / 1000);
                     if (!result.tests[test]) {
                         var failureElement = testCase.ele("failure");
                         failureElement.att("message", test + ":" + result.responseCode.code + ":" + result.responseBody);
